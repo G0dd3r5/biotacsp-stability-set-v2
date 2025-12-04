@@ -9,7 +9,8 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from load_data import load_data
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-THRESHOLD = 0.5
+THRESHOLDS = [0.01, 0.02, 0.03, 0.04, 0.05, 0.1, 0.15, 0.2, 0.25, 0.30, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+
 
 FEATURE_COLS = [
     'ff_biotac_1','ff_biotac_2','ff_biotac_3','ff_biotac_4','ff_biotac_5',
@@ -46,10 +47,27 @@ class SlipRNN(nn.Module):
         logits = self.fc(last).squeeze(-1)
         return logits
 
+def normalise_per_object(df, feature_cols):
+    df_norm = df.copy()
+    for obj_id, grp in df.groupby("object"):
+        X = grp[feature_cols].values.astype(np.float32)
+        mean = X.mean(axis=0, keepdims=True)
+        std = X.std(axis=0, keepdims=True) + 1e-8
+        Xn = (X - mean) / std
+        df_norm.loc[grp.index, feature_cols] = Xn
+    return df_norm
 
 def _load_xy():
     df_tr = load_data("bts3v2_palm_down")
     df_te = load_data("bts3v2_palm_down_test")
+
+
+    df_tr[FEATURE_COLS] = df_tr[FEATURE_COLS].astype(np.float32)
+    df_te[FEATURE_COLS] = df_te[FEATURE_COLS].astype(np.float32)
+
+
+    df_tr = normalise_per_object(df_tr, FEATURE_COLS)
+    df_te = normalise_per_object(df_te, FEATURE_COLS)
 
     X_train = df_tr[FEATURE_COLS].values.astype(np.float32)
     y_train = df_tr["slipped"].values.astype(np.float32)
@@ -101,26 +119,27 @@ def run(model_dir: str):
         logits_test = model(X_test_t).cpu().numpy()
         probs_test = 1.0 / (1.0 + np.exp(-logits_test))
 
-    preds_test = (probs_test >= THRESHOLD).astype(int)
+    for THRESHOLD in THRESHOLDS:
+        preds_test = (probs_test >= THRESHOLD).astype(int)
 
-    acc = accuracy_score(y_test, preds_test)
-    prec = precision_score(y_test, preds_test, zero_division=0)
-    rec = recall_score(y_test, preds_test)
-    f1 = f1_score(y_test, preds_test)
+        acc = accuracy_score(y_test, preds_test)
+        prec = precision_score(y_test, preds_test, zero_division=0)
+        rec = recall_score(y_test, preds_test)
+        f1 = f1_score(y_test, preds_test)
 
-    model_path = os.path.join(model_dir, "slip_rnn.pt")
-    torch.save(model.state_dict(), model_path)
+        model_path = os.path.join(model_dir, "slip_rnn.pt")
+        torch.save(model.state_dict(), model_path)
 
-    metrics = {
-        "model": "rnn",
-        "accuracy": acc,
-        "precision": prec,
-        "recall": rec,
-        "f1": f1,
-        "threshold": THRESHOLD,
-        "model_path": model_path,
-    }
-    print("[RNN] metrics:", metrics)
+        metrics = {
+            "model": "rnn",
+            "accuracy": acc,
+            "precision": prec,
+            "recall": rec,
+            "f1": f1,
+            "threshold": THRESHOLD,
+            "model_path": model_path,
+        }
+        print("[RNN] metrics:", metrics)
     return metrics
 
 
