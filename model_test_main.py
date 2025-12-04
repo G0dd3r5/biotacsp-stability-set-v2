@@ -26,6 +26,7 @@ def main():
             f"prec={m['precision']:.3f}  "
             f"rec={m['recall']:.3f}  "
             f"f1={m['f1']:.3f}  "
+            f"threshold={m['threshold']:.2f}  "
             f"path={m['model_path']}"
         )
 
