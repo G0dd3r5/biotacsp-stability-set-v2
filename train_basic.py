@@ -1,6 +1,7 @@
 # train_random_forest.py
 
 import os
+import joblib
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -75,5 +76,9 @@ def main():
     print("Classification report (validation):")
     print(classification_report(y_val, y_val_pred, digits=4))
     
+    # Save the trained model
+    model_path = os.path.join(output_dir, "random_forest_model.joblib")
+    joblib.dump(clf, model_path)
+
 if __name__ == "__main__":
     main()
