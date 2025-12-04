@@ -111,7 +111,7 @@ def main():
     )
 
     print("Training Random Forests with 'n' trees...")
-    # 1) Accuracy / Loss / Error vs 'epochs' (using number of trees as proxy)
+    # Accuracy / Loss / Error vs 'epochs' (using number of trees as proxy)
     print("Plotting accuracy/error/loss vs number of trees...")
     plot_accuracy_error_loss_vs_trees(X_train, y_train, X_val, y_val, output_dir)
 
