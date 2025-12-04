@@ -17,7 +17,7 @@ def train_rf(X_train, y_train) -> RandomForestClassifier:
     """
     Train a simple RandomForest baseline.
     Uses 200 trees and default hyperparameters.
-    Explanation of random forests works: 
+    Explanation of how random forests work: 
         https://builtin.com/data-science/random-forest-algorithm
     """
     clf = RandomForestClassifier(
